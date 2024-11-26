@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lineup Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .upload-section, .gallery-section {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .sections {
+            display: flex;
+            justify-content: space-between;
+        }
+        .section {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 10px;
+            width: 30%;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+        .gallery img {
+            width: 100px;
+            height: auto;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lineup Page for <span id="map-name">Map</span></h1>
+    <div class="upload-section">
+        <h2>Upload Lineup Images</h2>
+        <form id="upload-form">
+            <label>Molly Location:</label>
+            <input type="file" id="molly" required><br><br>
+            <label>Standing Position:</label>
+            <input type="file" id="standing" required><br><br>
+            <label>Lineup Position:</label>
+            <input type="file" id="lineup" required><br><br>
+            <button type="button" onclick="uploadImages()">Upload</button>
+        </form>
+    </div>
+
+    <div class="gallery-section">
+        <h2>Uploaded Lineups</h2>
+        <div id="gallery" class="gallery"></div>
+    </div>
+
+    <div class="sections">
+        <div class="section" id="A">
+            <h3>Section A</h3>
+        </div>
+        <div class="section" id="B">
+            <h3>Section B</h3>
+        </div>
+        <div class="section" id="C">
+            <h3>Section C</h3>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        document.getElementById('map-name').textContent = params.get('map') || "Unknown Map";
+
+        function uploadImages() {
+            const molly = document.getElementById('molly').files[0];
+            const standing = document.getElementById('standing').files[0];
+            const lineup = document.getElementById('lineup').files[0];
+
+            if (!molly || !standing || !lineup) {
+                alert("Please upload all three images.");
+                return;
+            }
+
+            [molly, standing, lineup].forEach(file => {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                fetch('http://127.0.0.1:5000/upload', { // Replace with your backend URL
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data.message);
+                        fetchImages(); // Refresh the gallery
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+        }
+
+        function fetchImages() {
+            fetch('http://127.0.0.1:5000/list') // Replace with your backend URL
+                .then(response => response.json())
+                .then(data => {
+                    const gallery = document.getElementById('gallery');
+                    gallery.innerHTML = '';
+                    data.forEach(file => {
+                        const img = document.createElement('img');
+                        img.src = `http://127.0.0.1:5000/download/${file.id}`;
+                        img.alt = file.name;
+                        gallery.appendChild(img);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Fetch images on page load
+        window.onload = fetchImages;
+    </script>
+</body>
+</html>
